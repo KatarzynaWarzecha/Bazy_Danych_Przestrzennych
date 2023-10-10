@@ -1,0 +1,2 @@
+# Bazy_Danych_Przestrzennych
+Laboratorium Bazy Danych Przestrzennych
