@@ -1,0 +1,71 @@
+2.
+CREATE DATABASE mapa;
+3.
+CREATE EXTENSION postgis;
+4.
+CREATE TABLE buildings (id int, geometry geometry, name varchar);
+CREATE TABLE roads (id int, geometry geometry, name varchar);
+CREATE TABLE poi (id int, geometry geometry, name varchar);
+5.
+INSERT INTO buildings (id, geometry, name)
+    VALUES (4, ((9,9),(10,9),(9,8),(10,8)), 'BuildingD');
+INSERT INTO buildings (id, geometry, name)
+    VALUES ('4', ST_GeometryFromText('POLYGON((9 9,10 9,10 8,9 8,9 9))'), 'BuildingD');
+INSERT INTO buildings (id, geometry, name)
+    VALUES ('1', ST_GeometryFromText('POLYGON((8 4,10.5 4,10.5 1.5,8 1.5,8 4))'), 'BuildingA');
+INSERT INTO buildings (id, geometry, name)
+    VALUES ('6', ST_GeometryFromText('POLYGON((1 2,2 2,2 1,1 1,1 2))'), 'BuildingF');
+INSERT INTO buildings (id, geometry, name)
+    VALUES ('2', ST_GeometryFromText('POLYGON((4 7,6 7,6 5,4 5,4 7))'), 'BuildingB');
+INSERT INTO buildings (id, geometry, name)
+    VALUES ('3', ST_GeometryFromText('POLYGON((3 8,5 8,5 6,3 6,3 8))'), 'BuildingC');
+INSERT INTO roads (id, geometry, name)
+    VALUES ('2', ST_GeometryFromText('LINESTRING(7.5 10.5,7.5 0)'), 'RoadY');
+INSERT INTO roads (id, geometry, name)
+    VALUES ('1', ST_GeometryFromText('LINESTRING(0 4.5,12 4.5)'), 'RoadX');
+INSERT INTO poi (id, geometry, name)
+    VALUES ('1', ST_GeometryFromText('POINT(6 9.5)'), 'K');
+INSERT INTO poi (id, geometry, name)
+    VALUES ('2', ST_GeometryFromText('POINT(6.5 6)'), 'J');
+INSERT INTO poi (id, geometry, name)
+    VALUES ('3', ST_GeometryFromText('POINT(9.5 6)'), 'I');
+INSERT INTO poi (id, geometry, name)
+    VALUES ('4', ST_GeometryFromText('POINT(1 3.5)'), 'G');
+INSERT INTO poi (id, geometry, name)
+    VALUES ('5', ST_GeometryFromText('POINT(5.5 1.5)'), 'H');
+6.
+a.
+select sum(ST_Length(geometry)) as dlugosc_drog from public.roads;
+b.
+select  ST_AsText(geometry) as geom_wkt, ST_Area(geometry) as pole, 
+ST_Perimeter(geometry) as obw from public.buildings where name='BuildingA' ;
+c.
+select  name, ST_Area(geometry) as pole
+from public.buildings order by name;
+d.
+select name, ST_Perimeter(geometry) AS obwod
+from public.buildings
+order by ST_Area(geometry) desc limit 2;
+e.
+select b.name as b_name, p.name as p_name, ST_Distance(b.geometry, p.geometry) as odleglosc
+from public.buildings b
+cross join public.poi p
+where b.name = 'BuildingC' and p.name = 'K' order by odleglosc limit 1;
+f.
+select ST_Area(ST_Intersection(c.geometry, b.geometry)) as pole
+from public.buildings as c, public.buildings as b
+where c.name = 'BuildingC' and b.name = 'BuildingB' and ST_Distance(c.geometry, b.geometry) > 0.5;
+g.
+select b.* from public.buildings as b
+join public.roads as d on ST_Intersects(ST_Centroid(b.geometry), d.geometry)
+where d.name = 'RoadX';
+h.
+with c_geometry as (
+    select geometry from public.buildings
+    where name = 'BuildingC'
+),
+polygon_geometry as (
+    select 'POLYGON((4 7, 6 7, 6 8, 4 8, 4 7))'::geometry as geometry
+)
+select ST_Area(ST_Difference(polygon_geometry.geometry, c_geometry.geometry)) as pole_powierzchni
+from c_geometry, polygon_geometry;
