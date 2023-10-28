@@ -1,0 +1,92 @@
+--create extension postgis;
+--shp2pgsql "C:\T2018_KAR_GERMANY\T2018_KAR_BUILDINGS.shp" public.t2018_kar_buildings | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2019_KAR_GERMANY\T2019_KAR_BUILDINGS.shp" public.t2019_kar_buildings | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2018_KAR_GERMANY\T2018_KAR_POI_TABLE.shp" public.t2018_kar_poi_table | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2019_KAR_GERMANY\T2019_KAR_POI_TABLE.shp" public.t2019_kar_poi_table | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2019_KAR_GERMANY\T2019_KAR_STREETS.shp" public.t2019_kar_streets | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2019_KAR_GERMANY\T2019_KAR_STREET_NODE.shp" public.t2019_kar_street_node | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2019_KAR_GERMANY\T2019_KAR_LAND_USE_A.shp" public.t2019_kar_land_use_a | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2019_KAR_GERMANY\T2019_KAR_RAILWAYS.shp" public.t2019_kar_railways | psql -h localhost -p 5432 -U postgres -d karlsruhe
+--shp2pgsql "C:\T2019_KAR_GERMANY\T2019_KAR_WATER_LINES.shp" public.t2019_kar_water_lines | psql -h localhost -p 5432 -U postgres -d karlsruhe
+
+--Zad 1
+with b_2019 as (
+	select * from  t2019_kar_buildings
+	where polygon_id not in (select polygon_id from t2018_kar_buildings)
+), 
+b_2018_2019 as (
+	select t2018_kar_buildings.* from  t2018_kar_buildings 
+	inner join  t2019_kar_buildings on t2018_kar_buildings.polygon_id= t2019_kar_buildings.polygon_id
+	where st_difference( t2018_kar_buildings.geom, t2019_kar_buildings.geom) > ST_GeomFromText('POLYGON((0 0, 0 0, 0 0, 0 0, 0 0))')
+),
+budowa_zmiana as (
+	select * from b_2019 union
+	select * from b_2018_2019
+),
+--select distinct(budowa_zmiana.*) from budowa_zmiana;
+
+--Zad 2 
+p_2019 as (
+	select * from t2019_kar_poi_table
+	where poi_id not in (select poi_id from t2018_kar_poi_table)
+), 
+p_odl as (
+	select distinct(poi_id), p_2019.type from p_2019, budowa_zmiana
+	where ST_DWithin(budowa_zmiana.geom, p_2019.geom, 0.005)
+) 
+select type, count(*) from p_odl
+group by type;
+
+--Zad 3
+drop table if exists streets_reprojected;
+create table streets_reprojected as
+select
+    gid,link_id,st_name,ref_in_id,nref_in_id,func_class,speed_cat,fr_speed_l,to_speed_l,dir_travel,
+    st_transform(geom, 3068) as geom
+from t2019_kar_streets;
+
+alter table streets_reprojected add constraint enforce_srid_geom check (st_srid(geom) = 3068);
+select UpdateGeometrySRID('streets_reprojected', 'geom', 3068);
+
+--Zad 4
+drop table if exists input_points;
+create table input_points (
+    gid serial primary key,
+    geom geometry(Point, 4326)  
+);
+
+insert into input_points (geom) values (ST_GeomFromText('POINT(8.36093 49.03174)', 4326));
+insert into input_points (geom) values (ST_GeomFromText('POINT(8.39876 49.00644)', 4326));
+
+--Zad 5
+select UpdateGeometrySRID('input_points', 'geom', 3068);
+alter table input_points add constraint enforce_srid_geom check (st_srid(geom) = 3068);
+
+--Zad 6
+select UpdateGeometrySRID('t2019_kar_street_node', 'geom', 3068);
+--alter table t2019_kar_street_node add constraint enforce_srid_geom check (st_srid(geom) = 3068
+with linia as (
+	select st_makeline(geom) as lin from input_points
+)
+select sn.gid, sn.geom from t2019_kar_street_node sn
+where exists (
+    select 1 from linia
+    where sn.intersect='Y' and ST_DWithin(lin, sn.geom, 0.002) 
+);
+
+--Zad 7
+select count(distinct(poi.poi_id)) as liczba_sklepow_sportowych
+from t2019_kar_poi_table as poi
+inner join t2019_kar_land_use_a as park on ST_DWithin(poi.geom, park.geom, 0.003)
+where poi.type = 'Sporting Goods Store' and park.type like 'Park (%';
+
+--Zad 8
+drop table if exists t2019_kar_bridges;
+create table t2019_kar_bridges as
+select distinct(ST_Intersection(r.geom, w.geom)) as geom
+from t2019_kar_railways as r
+inner join t2019_kar_water_lines as w
+on ST_Intersects(r.geom, w.geom)
+where w.type='Can';
+
+select * from t2019_kar_bridges;
