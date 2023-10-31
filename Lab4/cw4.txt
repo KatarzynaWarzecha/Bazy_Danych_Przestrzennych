@@ -1,0 +1,45 @@
+--Zad 0 
+--Ładowanie danych (analogiczne dla kolejnych plików .shp):
+shp2pgsql C:\qgis_sample_data\qgis_sample_data\shapefiles\alaska.shp alaska | psql -h localhost -p 5432 -U postgres -d qgis
+--połączenie z bazą danych: z0_1.png
+
+--Zad 1
+--rozroznienie kolorystyczne: z1_1.png
+--pow. lasow mieszanych: z1_2.png
+
+--Zad2
+--podział na typy lasów: z2_1.png (konieczne było ignorowanie wartości nieprawidłowych)
+--import powstałych warstw: z2_2.png
+
+--Zad3
+--wyznaczenie linii kolejowych na wybranym obszarze: z3_1.png
+--wyznaczenie długości: z3_2.png
+
+--Zad4
+--liczba lotnisk militarnych: z4_1.png
+--liczba lotnisk militarnych pow. 1400 m.: z4_2.png
+--srednia wysokosc: z4_3.png
+
+--Zad5
+--warstwa i liczba budynków: z5_1.png
+
+--Zad6
+--Bufor i liczba budynków: z6_1.png
+
+--Zad7
+--przecięcia: z7_1.png
+--wynik działania: z7_2.png
+
+--Zad8 
+--wydobywanie wierzchołków: z8_1.png
+--zliczenie: z8_2.png
+--dodanie do bazy: z8_3.png
+
+--Zad9
+--wynik (zaznaczony ciemniejszym kolorem): z9_1.png
+
+--Zad10
+--powierzchnia pierwotna: z10_1.png
+--powierzchnia po uproszczeniu: z10_2.png
+--l. wierzchołków pierwotna: z10_3.png
+--l. wierzchołków po uproszczeniu: z10_4.png (liczba zmniejszyła się)
