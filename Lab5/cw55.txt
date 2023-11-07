@@ -1,0 +1,70 @@
+--create extension postgis;
+--Zad1
+--create table if not exists obiekty (
+--    id serial primary key,
+--    nazwa varchar(255),
+--    geometria geometry
+--);
+--insert into obiekty (nazwa, geometria)
+--    values ('obiekt3',ST_GeometryFromText('POLYGON((7 15,10 17,12 13,7 15))'));
+--insert into obiekty (nazwa, geometria)
+--    values ('obiekt4',ST_GeometryFromText('LINESTRING(20 20,25 25,27 24,25 22,26 21,22 19,20.5 19.5)'));
+--insert into obiekty (nazwa, geometria)
+--    values ('obiekt5',ST_GeometryFromText('GEOMETRYCOLLECTION(POINT(30 30 59),POINT(38 32 234))'));
+--insert into obiekty (nazwa, geometria)
+--    values ('obiekt6',ST_GeometryFromText('GEOMETRYCOLLECTION(POINT(4 2),LINESTRING(1 1,3 2))'));
+--insert into obiekty (nazwa, geometria)
+--    values ('obiekt1',ST_Collect(
+--		array[ ST_GeomFromText('LINESTRING(0 1,1 1)'),
+--			ST_GeomFromText('CIRCULARSTRING(1 1,2 0,3 1)'), 
+--			  ST_GeomFromText('CIRCULARSTRING(3 1,4 2,5 1)'),
+--			  ST_GeomFromText('LINESTRING(5 1,6 1)')
+--			 ] ));
+			 
+--insert into obiekty (nazwa, geometria)
+--    values ('obiekt2',ST_Collect(
+--		array[ ST_GeomFromText('LINESTRING(10 6,14 6)'),
+--			ST_GeomFromText('CIRCULARSTRING(14 6,16 4,14 2)'), 
+--			  ST_GeomFromText('CIRCULARSTRING(14 2,12 0,10 2)'),
+--			  ST_GeomFromText('LINESTRING(10 2,10 6)'),
+--			  ST_GeomFromText('CIRCULARSTRING(11 2,13 2,11 2)')
+--			 ] ));
+
+--Zad2
+with shortest_line as (
+  select ST_ShortestLine(ob3.geometria, ob4.geometria) as shortest_line
+  from obiekty ob3, obiekty ob4
+  where ob3.nazwa = 'obiekt3' and ob4.nazwa = 'obiekt4'
+), 
+buffer_5_units as (
+  select ST_Buffer(shortest_line, 5) as buffer
+  from shortest_line
+)
+select ST_Area(buffer) as pole_powierzchni
+from buffer_5_units;
+
+--Zad3
+--warunek: zamiana linii na poligon poprzez dodanie punktu początkowego na końcu
+--update obiekty
+--set geometria = ST_MakePolygon(ST_AddPoint(geometria, ST_StartPoint(geometria)))
+--where nazwa = 'obiekt4';
+
+--Zad4
+--with polaczenie as (
+--  select ST_Union(a.geometria, b.geometria) AS geom 
+--  from obiekty a, obiekty b
+--  where a.nazwa = 'obiekt3' and b.nazwa = 'obiekt4'
+--)
+--insert into obiekty (nazwa, geometria)
+--select 'obiekt7', geom
+--from polaczenie;
+
+--Zad5
+select nazwa,
+  ST_Area(ST_Buffer(geometria, 5)) as pole_powierzchni
+from obiekty where ST_HasArc(geometria) = false;
+
+
+
+
+
